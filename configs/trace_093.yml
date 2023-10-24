@@ -1,0 +1,7 @@
+# Trace number 093
+
+PATH_DRIFT : C:/Users/manon/Desktop/Thesis/data/Dumont-etal_2019/datasets/ISMER_20151103_spot093_drift.tab
+PATH_WIND : C:/Users/manon/Desktop/Thesis/data/ERA5_Wind/WindData.nc
+PATH_WATER : C:/Users/manon/Desktop/Thesis/data/HYCOM/Water_093.nc4
+PATH_WAVES :  C:/Users/manon/Desktop/Thesis/data/ERA5_Wind/WaveData.nc
+

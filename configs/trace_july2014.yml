@@ -1,0 +1,7 @@
+# Traces between July. 06 and July 11.
+
+PATH_DRIFT : C:/Users/manon/Desktop/Thesis/data/Dumont-etal_2019/datasets/ISMER_20140706_spot073_drift.tab
+PATH_WIND : C:/Users/manon/Desktop/Thesis/data/ERA5_Wind/WindData.nc
+PATH_WATER : C:/Users/manon/Desktop/Thesis/data/HYCOM/Water_July2014.nc4
+PATH_WAVES :  C:/Users/manon/Desktop/Thesis/data/ERA5_Wind/WaveData.nc
+
