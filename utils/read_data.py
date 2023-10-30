@@ -189,3 +189,22 @@ def water_interpolated(path_water):
     water_v_interpolation = RegularGridInterpolator((time, depth, lat, lon), water_v, bounds_error=False)
 
     return water_u_interpolation,water_v_interpolation
+
+############# Bathymetry/Coasts Data #######################################################
+
+def bathymetry_interpolated(path_bathy):
+    ds = nc.Dataset(path_bathy)
+
+    lon = ds.variables['lon']
+    lon = lon[:].data
+
+    lat = ds.variables['lat']
+    lat = lat[:].data
+
+    elevation = ds.variables['elevation']
+    elevation = elevation[:].data
+
+    # Interpolating functions for u10 and v10
+    elevation_interpolation = RegularGridInterpolator((lat, lon), elevation, bounds_error=False)
+
+    return elevation_interpolation

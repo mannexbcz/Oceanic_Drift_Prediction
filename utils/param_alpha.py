@@ -5,6 +5,22 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 import math
 
+#################### Non personalized alpha ##########################################################3
+
+def general_alpha(alpha = 0.02, theta = 0.349066):
+    
+    alpha_mat = np.zeros((2,2))
+
+    alpha_mat[0,0] = alpha * math.cos(theta)
+    alpha_mat[1,0] = -alpha * math.sin(theta)
+    alpha_mat[0,1] = alpha * math.sin(theta)
+    alpha_mat[1,1] = alpha * math.cos(theta)
+
+    return alpha_mat
+
+
+########################################################################################################
+
 def get_alpha(lats,lons,times, water_u, water_v, wind_u, wind_v):
     lat1 = lats[0]
     lat2 = lats[1]
