@@ -16,9 +16,9 @@ class DriftPairDataset(Dataset):
     def __getitem__(self, idx):
 
         init_lat, init_lon = self.tab['Latitude_init'].iloc[idx], self.tab['Longitude_init'].iloc[idx]
-        init_position = torch.tensor([[init_lat], [init_lon]], dtype=torch.double)
+        init_position = torch.tensor([init_lat,init_lon], dtype = torch.float)
         final_lat, final_lon = self.tab['Latitude_final'].iloc[idx], self.tab['Longitude_final'].iloc[idx]
-        final_position = torch.tensor([[final_lat], [final_lon]], dtype=torch.double)
+        final_position = torch.tensor([final_lat, final_lon], dtype = torch.float)
         init_time = self.tab['time_init'].iloc[idx]
 
         # Paths for the context
@@ -42,8 +42,8 @@ class DriftPairDataset(Dataset):
         context_bathymetry, context_coasts = get_bathymetry_context(path_bathy, init_lat, init_lon, init_time, d = self.d_context, npoints = self.npoints)
 
         # merge contextes
-        context = np.dstack((context_water_u,context_water_v,context_wind_u,context_wind_v,context_waves_u,context_waves_v, context_bathymetry, context_coasts))
-        assert np.shape(context) == (self.npoints,self.npoints,8), f"Wrong shape for the context: {np.shape(context)}"
-        context = torch.from_numpy(context)
+        context = np.stack((context_water_u,context_water_v,context_wind_u,context_wind_v,context_waves_u,context_waves_v, context_bathymetry, context_coasts))
+        assert np.shape(context) == (8,self.npoints,self.npoints), f"Wrong shape for the context: {np.shape(context)}"
+        context = torch.from_numpy(context.astype(np.float32))
         
         return init_position, final_position, init_time, context, dict_path

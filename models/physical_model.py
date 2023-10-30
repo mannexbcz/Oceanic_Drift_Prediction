@@ -4,10 +4,12 @@ import torch
 from utils.read_data import wind_interpolated, water_interpolated
 from utils.param_alpha import general_alpha
 from utils.RK4 import compute_position
+from models.linear_model import u_drift_linear_matrix
 
 def physical_model(init_pos, time_init, dict_path):
-    init_lat = init_pos[0,0].item()
-    init_lon = init_pos[1,0].item()
+    print('Position initiale: ', init_pos)
+    init_lat = init_pos[0].item()
+    init_lon = init_pos[1].item()
     init_pos = np.array([init_lon, init_lat])
 
     # Get interpolated initial data
@@ -23,6 +25,10 @@ def physical_model(init_pos, time_init, dict_path):
     # Update position --> position at t+1h
     longitudes, latitudes, _ = compute_position(u_drift, init_pos, time_init,1,1) # make only one time step of 1h 
     final_lat, final_lon = latitudes[-1], longitudes[-1]
-    final_position = torch.tensor([[final_lat], [final_lon]], dtype=torch.double)
+    final_position = torch.tensor([final_lat, final_lon], dtype = torch.float)
 
     return final_position
+
+def get_physical_model():
+    return physical_model
+
