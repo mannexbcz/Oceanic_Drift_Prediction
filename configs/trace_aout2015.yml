@@ -1,6 +1,0 @@
-# Traces between Aug. 05 and Aug 16.
-
-PATH_DRIFT : C:/Users/manon/Desktop/Thesis/data/Dumont-etal_2019/datasets/ISMER_20150809_spot059_drift.tab
-PATH_WIND : C:/Users/manon/Desktop/Thesis/data/ERA5_Wind/WindData.nc
-PATH_WATER : C:/Users/manon/Desktop/Thesis/data/HYCOM/Water_Aout2015.nc4
-

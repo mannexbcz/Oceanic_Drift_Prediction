@@ -1,7 +1,9 @@
-PATH_DRIFT: ../data/Dumont-etal_2019/datasets\ISMER_20140629_spot023_drift.tab
-PATH_WATER: C:/Users/manon/Desktop/Thesis/data/HYCOM/data_ISMER_20140629_spot023_drift.nc4
-PATH_WAVES: C:/Users/manon/Desktop/Thesis/data/ERA5_Wind/WaveData.nc
-PATH_WIND: C:/Users/manon/Desktop/Thesis/data/ERA5_Wind/WindData.nc
+# Example of config file for one trajectory. 
+PATH_BATHY: ../data/GEBCO_Bathymetry/GEBCO_25_Oct_2023_ba927c4c060f/gebco_2023_n52.0_s44.0_w-74.0_e-53.0.nc
+PATH_DRIFT: ../data/Dumont-etal_2019/datasets/ISMER_20140629_spot023_drift.tab
+PATH_WATER: ../data/HYCOM/data_ISMER_20140629_spot023_drift.nc4
+PATH_WAVES: ../data/ERA5_Wind/WaveData.nc
+PATH_WIND: ../data/ERA5_Wind/WindData.nc
 max_lat: 50
 max_lon: -58
 min_lat: 47

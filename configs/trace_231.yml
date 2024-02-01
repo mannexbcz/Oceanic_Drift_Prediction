@@ -1,5 +1,0 @@
-# Trace number 231
-
-PATH_DRIFT : C:/Users/manon/Desktop/Thesis/data/Dumont-etal_2019/datasets/ISMER_20140629_spot231_drift.tab
-PATH_WIND : C:/Users/manon/Desktop/Thesis/data/ERA5_Wind/WindData.nc
-PATH_WATER : C:/Users/manon/Desktop/Thesis/data/HYCOM/data_2014.nc4

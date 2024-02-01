@@ -1,8 +1,0 @@
-PATH_DRIFT: ../data/Dumont-etal_2019/datasets2\ISMER_20150619_spot033_drift.tab
-PATH_WATER: C:/Users/manon/Desktop/Thesis/data/HYCOM/data_ISMER_20150619_spot033_drift.nc4
-PATH_WAVES: C:/Users/manon/Desktop/Thesis/data/ERA5_Wind/WaveData.nc
-PATH_WIND: C:/Users/manon/Desktop/Thesis/data/ERA5_Wind/WindData.nc
-max_lat: 52
-max_lon: -56
-min_lat: 47
-min_lon: -62
