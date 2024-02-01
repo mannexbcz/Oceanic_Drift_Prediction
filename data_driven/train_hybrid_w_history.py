@@ -2,8 +2,8 @@ import os
 import torch
 from torch.utils.data import DataLoader
 import lightning.pytorch as pl
-from data_driven.models.hybrid_model import HybridDriftModule
-from data_processing.dataset import DriftPairDataset, DriftPairDataset_Wo_Computation
+from data_driven.models.hybrid_model_w_history import HybridDriftModule_w_History
+from data_processing.dataset import DriftPairDataset_W_Previous
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from argparse import ArgumentParser
@@ -27,15 +27,15 @@ if __name__ == "__main__":
 
     # Datasets
     #train_dataset = DriftPairDataset(csvfile,d_context=1,npoints=32)
-    train_dataset = DriftPairDataset_Wo_Computation(csvfile_train)
-    val_dataset = DriftPairDataset_Wo_Computation(csvfile_val)
+    train_dataset = DriftPairDataset_W_Previous(csvfile_train)
+    val_dataset = DriftPairDataset_W_Previous(csvfile_val)
 
     # Dataloaders
     train_loader = DataLoader(train_dataset, batch_size=config['bs'], shuffle=True, num_workers=config['num_workers'], pin_memory=True) 
     val_loader = DataLoader(val_dataset, batch_size=config['bs'], num_workers=config['num_workers'])
 
     # Model
-    model = HybridDriftModule(channels1=config['ch1'], channels2=config['ch2'], hidden1=config['hidden1'],hidden2=config['hidden2'],hidden3=config['hidden3'],hidden4=config['hidden4'],lr =config['lr']) #TODO add channels in the config
+    model = HybridDriftModule_w_History(channels1=config['ch1'], channels2=config['ch2'], hidden1=config['hidden1'],hidden2=config['hidden2'],hidden3=config['hidden3'],hidden4=config['hidden4'],lr =config['lr']) #TODO add channels in the config
 
     # Trainer
     lr_monitor = LearningRateMonitor(logging_interval='step')

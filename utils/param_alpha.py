@@ -127,8 +127,8 @@ def compute_alpha_matrix(path, water_u, water_v, wind_u, wind_v):
     return alpha
 
 #===========================================================================================================================================
-def update_alpha_GD(path, water_u, water_v, wind_u, wind_v, alpha = 0.02, theta = 0.349066, step=0.1, npoints=2):
-    true_lon, true_lat, true_time = get_true_drift_positions(path)
+def update_alpha_GD(path, water_u, water_v, wind_u, wind_v, alpha = 0.02, theta = 0.349066, step=0.1, npoints=2, NOAA=False):
+    true_lon, true_lat, true_time = get_true_drift_positions(path, NOAA)
 
     #alpha = 0.02
     #theta = 0.349066 # in rad, correspond to ~20°
@@ -177,8 +177,8 @@ def update_alpha_GD(path, water_u, water_v, wind_u, wind_v, alpha = 0.02, theta 
 
     return alpha_mat
 
-def update_alpha_GD_stockes(path, water_u, water_v, wind_u, wind_v,wave_u,wave_v, alpha = 0.02, theta = 0.349066, step=0.1, npoints=2):
-    true_lon, true_lat, true_time = get_true_drift_positions(path)
+def update_alpha_GD_stockes(path, water_u, water_v, wind_u, wind_v,wave_u,wave_v, alpha = 0.02, theta = 0.349066, step=0.1, npoints=2, NOAA=False):
+    true_lon, true_lat, true_time = get_true_drift_positions(path, NOAA)
 
     step_alpha = step*alpha
     step_theta = step*theta #this way, step correspond to a percentage of change, change is similar for both variables
@@ -327,3 +327,48 @@ def get_complex_alpha(lats,lons,times, water_u, water_v, wind_u, wind_v):
     print(complex_alpha)
 
     return complex_alpha
+
+
+#===========================================================================================================================================
+def compute_alpha_succesive_position(path, water_u, water_v, wind_u, wind_v, npoints=2, NOAA=False):
+    true_lon, true_lat, true_time = get_true_drift_positions(path, NOAA)
+
+    alpha_mat = np.zeros((2,2))
+
+    alphas = 0
+    thetas = 0
+
+    for i in range(npoints-1):
+
+        water_u_vec = np.zeros(2)
+        wind_u_vec = np.zeros(2)
+        ud = np.zeros(2)
+
+        ud[0] = dist_longitudes(true_lon[i],true_lon[i+1],true_lat[i],true_lat[i+1])/((true_time[i+1]-true_time[i])*3600) 
+        ud[1] = dist_latitudes(true_lat[i],true_lat[i+1])/((true_time[i+1]-true_time[i])*3600)
+
+        water_u_vec[0] = water_u([true_time[i],0,true_lat[i],true_lon[i]])
+        water_u_vec[1] = water_v([true_time[i],0,true_lat[i],true_lon[i]])
+
+        wind_u_vec[0] = wind_u([true_time[i],true_lat[i],true_lon[i]])
+        wind_u_vec[1] = wind_v([true_time[i],true_lat[i],true_lon[i]])
+
+        udiff = ud - water_u_vec
+
+        prod = np.dot(udiff,wind_u_vec)
+        norm = np.linalg.norm(udiff)* np.linalg.norm(wind_u_vec)
+        theta = math.acos(prod/norm)
+        alpha = np.linalg.norm(udiff)/np.linalg.norm(wind_u_vec)
+
+        alphas += alpha
+        thetas += theta
+    
+    alpha = alphas/(npoints-1)
+    theta = thetas/(npoints-1)
+
+    alpha_mat[0,0] = alpha * math.cos(theta)
+    alpha_mat[1,0] = -alpha * math.sin(theta)
+    alpha_mat[0,1] = alpha * math.sin(theta)
+    alpha_mat[1,1] = alpha * math.cos(theta)
+
+    return alpha_mat

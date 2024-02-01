@@ -34,21 +34,33 @@ def convert_hours_1900_2000(hours1900):
 
 ############# Drift position from Canada Data ##################################
 
-def read_drift_positions(path_drift):
-    drift_tab = pd.read_csv(path_drift,sep='\t',skiprows=13)
-    drift_tab['hours'] = drift_tab['Date/Time'].apply(lambda x: convert_date(x))
+def read_drift_positions(path_drift, NOAA = False):
+    if NOAA:
+        drift_tab = pd.read_csv(path_drift).head(73) #keep only 72h trajectories
+        drift_tab.rename(columns={"time":"hours", "longitude":"Longitude", "latitude":"Latitude"}, inplace=True)
+    else:
+        drift_tab = pd.read_csv(path_drift,sep='\t',skiprows=13)
+        drift_tab['hours'] = drift_tab['Date/Time'].apply(lambda x: convert_date(x))
     return drift_tab
 
-def get_initial_position(path_drift):
-    drift_tab = read_drift_positions(path_drift)
+def get_initial_position(path_drift, NOAA = False):
+    drift_tab = read_drift_positions(path_drift, NOAA)
     pos_1 = np.array([drift_tab._get_value(0,'Longitude'), drift_tab._get_value(0,'Latitude')])
     #pos_2 = np.array([drift_tab._get_value(1,'Longitude'), drift_tab._get_value(1,'Latitude')])
     time_1 = drift_tab._get_value(0,'hours')
     #time_2 = drift_tab._get_value(1,'hours')
     return pos_1, time_1
 
-def get_true_drift_positions(path_drift):
-    drift_tab = read_drift_positions(path_drift)
+def get_two_initial_positions(path_drift, NOAA = False):
+    drift_tab = read_drift_positions(path_drift, NOAA)
+    pos_0 = np.array([drift_tab._get_value(0,'Longitude'), drift_tab._get_value(0,'Latitude')])
+    pos_1 = np.array([drift_tab._get_value(1,'Longitude'), drift_tab._get_value(1,'Latitude')])
+    time_1 = drift_tab._get_value(1,'hours')
+    #time_2 = drift_tab._get_value(1,'hours')
+    return pos_0, pos_1, time_1
+
+def get_true_drift_positions(path_drift, NOAA = False):
+    drift_tab = read_drift_positions(path_drift, NOAA)
 
     lat = drift_tab['Latitude'].tolist()
     lon = drift_tab['Longitude'].tolist()
@@ -144,10 +156,10 @@ def wave_interpolated(path_wave):
     # Wind data
     ust = ds.variables['ust']
     ust = ust[:].data
-    ust = np.where(ust == -32767, np.nan, ust)
+    ust = np.where(ust == -32767, 0, ust)
     vst = ds.variables['vst']
     vst = vst[:].data
-    vst = np.where(vst == -32767, np.nan, vst)
+    vst = np.where(vst == -32767, 0, vst)
 
     # Interpolating functions for ust and vst
     ust_interpolation = RegularGridInterpolator((time, lat, lon), ust, bounds_error=False)
@@ -165,6 +177,9 @@ def water_interpolated(path_water):
     lon = ds.variables['lon']
     lon = lon[:].data
 
+    if min(lon) > 180:
+        lon = (lon+180)%360-180
+
     lat = ds.variables['lat']
     lat = lat[:].data
 
@@ -180,8 +195,8 @@ def water_interpolated(path_water):
     water_v = ds.variables['water_v']
     water_v = water_v[:].data
 
-    water_u = np.where(water_u < -10000, np.nan, water_u)
-    water_v = np.where(water_v < -10000, np.nan, water_v)
+    water_u = np.where(water_u < -10000, 0, water_u)
+    water_v = np.where(water_v < -10000, 0, water_v)
 
 
     # Interpolating functions for u10 and v10

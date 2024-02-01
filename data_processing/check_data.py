@@ -100,11 +100,45 @@ def check_near_shore_data():
         if ok == 'Y':
             listok.append(data_file)
 
-    with open("traces_wo_shoring.txt", "wb") as fp:   #Pickling
-        pickle.dump(listok, fp)
+    '''with open("traces_wo_shoring.txt", "wb") as fp:   #Pickling
+        pickle.dump(listok, fp)'''
     
     return
 
+def check_test_set():
+    testsetlist = '../data/nextpoint_ds/contexts/pt32d50/list_config_test.txt'
+
+    with open(testsetlist, 'rb') as f:
+        list_names = pickle.load(f)
+    
+    for data_file in list_names:
+        with open(os.path.join('configs_2',data_file), 'r') as f:
+            config = yaml.safe_load(f)
+
+        print('Opening ',data_file)
+
+        true_lon, true_lat, true_time = get_true_drift_positions(config['PATH_DRIFT'])
+
+        # setting the size of the map
+        fig,ax = plt.subplots(figsize=(8,5))
+
+        # creating the map - setting latitude and longitude
+        m = Basemap(projection = 'mill', llcrnrlat = config['min_lat'], urcrnrlat = config['max_lat'], llcrnrlon = config['min_lon'], urcrnrlon = config['max_lon'], resolution = 'i') 
+
+        # drawing the coastline
+        m.drawcoastlines()
+        m.drawcoastlines()
+        m.fillcontinents(color='darkseagreen')
+
+        m.plot(true_lon,true_lat,latlon=True,linewidth=1.5,color='r', label='True trajectory')
+
+        plt.legend(loc = 'lower right',framealpha=1)
+        plt.tight_layout()
+        plt.show()
+
+        #ok = input('Can we go to the next iteration?')
+
+    return
 
 
 if __name__ == "__main__": 

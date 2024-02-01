@@ -112,13 +112,13 @@ def plot_probability_after_N_hours(config, Ntraj, nhours, latmin = 44, latmax = 
     u10_interpolation, v10_interpolation = wind_interpolated(config['PATH_WIND'])
     water_u_interpolation, water_v_interpolation = water_interpolated(config['PATH_WATER'])
 
-    lon_endpoints, lat_endpoints = compute_N_trajectories(config['PATH_DRIFT'],water_u_interpolation, water_v_interpolation,u10_interpolation, v10_interpolation,Ntraj,nhours)
+    lon_endpoints, lat_endpoints = compute_N_trajectories(config['PATH_DRIFT'],water_u_interpolation, water_v_interpolation,u10_interpolation, v10_interpolation,None, None,Ntraj,nhours)
     true_lon, true_lat = get_closest_position(config['PATH_DRIFT'],nhours)
     lon_traj, lat_traj, _ = get_true_drift_positions(config['PATH_DRIFT'])
 
     pos_1, _ = get_initial_position(config['PATH_DRIFT'])
     # setting the size of the map
-    fig,ax = plt.subplots(figsize=(12,9))
+    fig,ax = plt.subplots(figsize=(2.8,2.7))
 
     # creating the map - setting latitude and longitude
     m = Basemap(projection = 'mill', llcrnrlat = latmin, urcrnrlat = latmax, llcrnrlon =lonmin, urcrnrlon = lonmax, resolution = 'i') 
@@ -140,10 +140,13 @@ def plot_probability_after_N_hours(config, Ntraj, nhours, latmin = 44, latmax = 
     m.scatter(true_lon,true_lat,latlon=True,s=20,color='k', marker = 'o', label='True position')
     m.plot(lon_traj,lat_traj,latlon=True,linewidth=1.5,color='k', linestyle='dashdot',label='True trajectory')
 
+    m.drawmapscale(lonmin+0.4, latmin+0.2, lonmax, latmin, 50, barstyle='fancy')
 
-    plt.legend(loc = 'lower right',framealpha=1)
-    plt.title(f'Probability distribution after %3d hours' %nhours)
-    plt.show()
+    #plt.legend(loc = 'lower right',framealpha=1)
+    plt.title(f'%3d hours' %nhours)
+    plt.tight_layout()
+    plt.savefig(f'figures/KDE_%2d_small.png'%nhours)
+    plt.savefig(f'figures/KDE_%2d_small.eps'%nhours, format='eps')
 
     return
 

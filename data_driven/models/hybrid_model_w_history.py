@@ -6,11 +6,11 @@ import torch.nn.functional as F
 import numpy as np
 from models.physical_model import get_physical_model
 from haversine import haversine
-from data_driven.losses import haversine_loss, LDA_loss_step, haversine_loss_cosine
+from data_driven.losses import haversine_loss
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
 
-class Hybrid_Model(nn.Module):
+class Hybrid_Model_W_History(nn.Module):
     def __init__(self, channels1 = 32, channels2 = 16, hidden1=128,hidden2=64,hidden3=128,hidden4=64) -> None:
         super().__init__()
         #self.physical_model = get_physical_model()
@@ -24,12 +24,11 @@ class Hybrid_Model(nn.Module):
             return layers
         
         self.data_driven_model = nn.Sequential(
-            #*block(6,16),
-            *block(6,channels1),
+            *block(12,channels1),
             *block(channels1,channels2),
             *block(channels2,1), 
             nn.Flatten(1,-1),
-            nn.Linear(16,hidden1), #16 or 64 for context of size 64
+            nn.Linear(16,hidden1),
             nn.ReLU(),
             nn.Linear(hidden1,hidden2),
             nn.ReLU(),
@@ -38,7 +37,7 @@ class Hybrid_Model(nn.Module):
         )
 
         self.final_part = nn.Sequential(
-            nn.Linear(34,hidden3),
+            nn.Linear(36,hidden3),
             nn.ReLU(),
             nn.Linear(hidden3,hidden4),
             nn.ReLU(),
@@ -46,53 +45,52 @@ class Hybrid_Model(nn.Module):
             nn.Tanh()
         )
 
-    def forward(self, xphys, context):
+    def forward(self, xphys,xprev, context):
         #xphys = self.physical_model(init_position.detach(), init_time.detach(), dict_path).detach().to(self.device)
         xNN_part = self.data_driven_model(context)
+        xphys = xphys.to(self.device)
+        xprev = xprev.to(self.device)
         #xphys = torch.squeeze(xphys)
-        x = torch.cat((xphys,xNN_part), dim=-1)
+        x = torch.cat((xNN_part,xphys,xprev), dim=-1)
         xNN = self.final_part(x)
         return xNN+xphys #torch.add(xphys, xNN) 
 
 
-class HybridDriftModule(pl.LightningModule):
+class HybridDriftModule_w_History(pl.LightningModule):
     def __init__(self,channels1=32, channels2=16,hidden1=128,hidden2=64,hidden3=128,hidden4=64, lr = 1e-3):
         super().__init__()
         self.save_hyperparameters()
         self.lr = lr
-        self.model = Hybrid_Model(channels1, channels2, hidden1,hidden2,hidden3,hidden4)
+        self.model = Hybrid_Model_W_History(channels1, channels2, hidden1,hidden2,hidden3,hidden4)
         #self.loss = nn.MSELoss()
         self.writer = SummaryWriter()
 
     def training_step(self, batch, batch_idx):
 
         #init_position, final_position, init_time, context, dict_path = batch
-        initial_position, xphys, final_position, context = batch
+        xphys, final_position, xprev, context = batch
 
         #xpred = self.model(init_position, init_time, context, dict_path)
-        xpred = self.model(xphys,context)
-        #loss = haversine_loss(xpred, final_position)
+        xpred = self.model(xphys,xprev,context)
+        loss = haversine_loss(xpred, final_position)
         #loss = self.loss(xpred,final_position)
-        #loss = LDA_loss_step(xpred,final_position,initial_position)
-        loss = haversine_loss_cosine(xpred,final_position,initial_position)
-
         self.log("train_loss", loss,prog_bar=True,on_epoch=True, on_step=True)
         return loss
     
     def test_step(self, batch, batch_idx):
         #init_position, final_position, init_time, context, dict_path = batch
-        initial_position,xphys, final_position, context = batch
+        xphys, final_position,xprev, context = batch
         #xpred = self.model(init_position, init_time, context, dict_path)
-        xpred = self.model(xphys,context)
+        xpred = self.model(xphys,xprev,context)
         loss = None
         self.log("test_loss", loss)
         return torch.Tensor([loss])
     
     def validation_step(self, batch, batch_idx):
         #init_position, final_position, init_time, context, dict_path = batch
-        initial_position, xphys, final_position, context = batch
+        xphys, final_position, xprev,context = batch
         #xpred = self.model(init_position, init_time, context, dict_path)
-        xpred = self.model(xphys,context)
+        xpred = self.model(xphys,xprev,context)
         loss = haversine_loss(xpred, final_position,)
         #loss = self.loss(xpred,final_position)
         self.log("val_loss", loss,prog_bar=True,on_epoch=True, on_step=True)

@@ -6,14 +6,25 @@ import torch.nn.functional as F
 import numpy as np
 from models.physical_model import get_physical_model
 from haversine import haversine
-from data_driven.losses import haversine_loss, LDA_loss_step, haversine_loss_cosine
+from data_driven.losses import haversine_loss, cumulative_lagrangian_loss
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
 
-class Hybrid_Model(nn.Module):
+def extract_nth_point(data_dict, n):
+    result_dict = {}
+    for key, values in data_dict.items():
+        if isinstance(values, list):
+            result_dict[key] = values[n]
+        elif isinstance(values, dict):
+            result_dict[key] = {k: v[n] for k, v in values.items()}
+        elif isinstance(values, torch.Tensor):
+            result_dict[key] = values[n].item()
+    return result_dict
+
+class Trajectory_Model(nn.Module):
     def __init__(self, channels1 = 32, channels2 = 16, hidden1=128,hidden2=64,hidden3=128,hidden4=64) -> None:
         super().__init__()
-        #self.physical_model = get_physical_model()
+        self.physical_model = get_physical_model()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         def block(in_channels, out_channels):
@@ -29,7 +40,7 @@ class Hybrid_Model(nn.Module):
             *block(channels1,channels2),
             *block(channels2,1), 
             nn.Flatten(1,-1),
-            nn.Linear(16,hidden1), #16 or 64 for context of size 64
+            nn.Linear(16,hidden1), #16
             nn.ReLU(),
             nn.Linear(hidden1,hidden2),
             nn.ReLU(),
@@ -46,8 +57,15 @@ class Hybrid_Model(nn.Module):
             nn.Tanh()
         )
 
-    def forward(self, xphys, context):
-        #xphys = self.physical_model(init_position.detach(), init_time.detach(), dict_path).detach().to(self.device)
+    def forward(self, pos0, time0, config, context):
+        #print(time0)
+        #print(config)
+        #print(context)
+        xphys = torch.zeros_like(pos0)
+        for i in range(pos0.size(dim=0)):
+            #xphys[i,:] = torch.unsqueeze(self.physical_model(torch.squeeze(pos0[i,:]), time0[i], extract_nth_point(config, i)).detach().to(self.device),dim=0) #(need to do .detach()?)
+            xphys[i,:] = torch.unsqueeze(self.physical_model(torch.squeeze(pos0[i,:]), torch.Tensor([time0]), config).detach().to(self.device),dim=0) #(need to do .detach()?)
+        xphys = xphys.to(self.device)
         xNN_part = self.data_driven_model(context)
         #xphys = torch.squeeze(xphys)
         x = torch.cat((xphys,xNN_part), dim=-1)
@@ -55,28 +73,27 @@ class Hybrid_Model(nn.Module):
         return xNN+xphys #torch.add(xphys, xNN) 
 
 
-class HybridDriftModule(pl.LightningModule):
-    def __init__(self,channels1=32, channels2=16,hidden1=128,hidden2=64,hidden3=128,hidden4=64, lr = 1e-3):
+class TrajectoryModule(pl.LightningModule):
+    def __init__(self,channels1=32, channels2=16,hidden1=128,hidden2=64,hidden3=128,hidden4=64, lr = 1e-3,bs=32):
         super().__init__()
         self.save_hyperparameters()
         self.lr = lr
-        self.model = Hybrid_Model(channels1, channels2, hidden1,hidden2,hidden3,hidden4)
+        self.model = Trajectory_Model(channels1, channels2, hidden1,hidden2,hidden3,hidden4)
         #self.loss = nn.MSELoss()
         self.writer = SummaryWriter()
+        self.bs = bs
 
     def training_step(self, batch, batch_idx):
 
-        #init_position, final_position, init_time, context, dict_path = batch
-        initial_position, xphys, final_position, context = batch
+        pos0, pos1, pos2, pos3, time0, config, context = batch
 
-        #xpred = self.model(init_position, init_time, context, dict_path)
-        xpred = self.model(xphys,context)
-        #loss = haversine_loss(xpred, final_position)
-        #loss = self.loss(xpred,final_position)
-        #loss = LDA_loss_step(xpred,final_position,initial_position)
-        loss = haversine_loss_cosine(xpred,final_position,initial_position)
+        xpred1 = self.model(pos0,time0,config,context)
+        xpred2 = self.model(xpred1,time0+1,config,context)
+        xpred3 = self.model(xpred2,time0+1,config,context)
+        
+        loss = cumulative_lagrangian_loss(pos0,pos1,pos2,pos3,xpred1,xpred2,xpred3)
 
-        self.log("train_loss", loss,prog_bar=True,on_epoch=True, on_step=True)
+        self.log("train_loss", loss,prog_bar=True,on_epoch=True, on_step=True, batch_size = self.bs)
         return loss
     
     def test_step(self, batch, batch_idx):
@@ -89,13 +106,16 @@ class HybridDriftModule(pl.LightningModule):
         return torch.Tensor([loss])
     
     def validation_step(self, batch, batch_idx):
-        #init_position, final_position, init_time, context, dict_path = batch
-        initial_position, xphys, final_position, context = batch
-        #xpred = self.model(init_position, init_time, context, dict_path)
-        xpred = self.model(xphys,context)
-        loss = haversine_loss(xpred, final_position,)
-        #loss = self.loss(xpred,final_position)
-        self.log("val_loss", loss,prog_bar=True,on_epoch=True, on_step=True)
+        pos0, pos1, pos2, pos3, time0, config, context = batch
+
+        xpred1 = self.model(pos0,time0,config,context)
+        xpred2 = self.model(xpred1,time0+1,config,context)
+        xpred3 = self.model(xpred2,time0+1,config,context)
+
+
+        loss = cumulative_lagrangian_loss(pos0,pos1,pos2,pos3,xpred1,xpred2,xpred3)
+
+        self.log("val_loss", loss,prog_bar=True,on_epoch=True, on_step=True,batch_size = self.bs)
         self.log("hp_metric", loss)
         return 
     

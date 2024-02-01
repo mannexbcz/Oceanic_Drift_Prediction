@@ -7,7 +7,7 @@ import numpy as np
 from tqdm import tqdm
 
 CONFIG_PATH = './configs_2'
-PATH_BATHY = '../data/GEBCO_Bathymetry/GEBCO_25_Oct_2023_ba927c4c060f/gebco_2023_n52.0_s44.0_w-74.0_e-53.0.nc'
+#PATH_BATHY = '../data/GEBCO_Bathymetry/GEBCO_25_Oct_2023_ba927c4c060f/gebco_2023_n52.0_s44.0_w-74.0_e-53.0.nc'
 
 if __name__ == "__main__": 
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
                 lat_final = np.interp(time_init+1, times, lats)
                 
                 new_row = pd.DataFrame({'Latitude_init':lat_init, 'Longitude_init':lon_init,'time_init': time_init, 'Latitude_final':lat_final, 'Longitude_final':lon_final,
-                                        'PATH_WATER': config['PATH_WATER'], 'PATH_WIND':config['PATH_WIND'], 'PATH_WAVES':config['PATH_WAVES'], 'PATH_BATHY': PATH_BATHY}, index=[0])
+                                        'PATH_WATER': config['PATH_WATER'], 'PATH_WIND':config['PATH_WIND'], 'PATH_WAVES':config['PATH_WAVES'], 'PATH_BATHY': config['PATH_BATHY']}, index=[0])
                 dataset = pd.concat([new_row,dataset.loc[:]]).reset_index(drop=True)
 
     print('Length of dataset:', len(dataset))
