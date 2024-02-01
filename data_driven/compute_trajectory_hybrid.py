@@ -44,10 +44,6 @@ def compute_trajectory_hybrid(config,nhours, NOAA=False):
     longitudes[0] = pos[1].item()
 
     # Model
-    '''model = Hybrid_Model(channels1=config['ch1'], channels2=config['ch2'])
-    checkpoint = torch.load(config['checkpoint_test'])
-    model.load_state_dict(checkpoint["state_dict"])
-    model.eval()'''
     module = HybridDriftModule.load_from_checkpoint(config['checkpoint_test'])
     model = module.model
     model.eval()
@@ -112,10 +108,6 @@ def compute_trajectory_hybrid_w_history(config,nhours, NOAA=False):
     prevcontext = torch.from_numpy(prevcontext.astype(np.float32)).to('cuda')
 
     # Model
-    '''model = Hybrid_Model(channels1=config['ch1'], channels2=config['ch2'])
-    checkpoint = torch.load(config['checkpoint_test'])
-    model.load_state_dict(checkpoint["state_dict"])
-    model.eval()'''
     module = HybridDriftModule_w_History.load_from_checkpoint(config['checkpoint_test'])
     model = module.model
     model.eval()
