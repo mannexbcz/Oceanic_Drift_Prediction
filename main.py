@@ -2,8 +2,8 @@
 This code allows the computation of trajectories using physical and hybrid models. 
 
 It takes as argument the path to a config file with paths to environmental data as well as minimum and maximum 
-latitudes and longitudes. A second argument is required, namely the data-driven model required 
-(str, letter between K and P)
+latitudes and longitudes (an example is provided under './configs/trace_ISMER_20140629_spot023_drift'). 
+A second argument is required, namely the data-driven model to use (str, letter between K and P)
 
 It computes and plots the predicted trajectories.
 """
