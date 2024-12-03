@@ -15,15 +15,11 @@ from data_driven.compute_trajectory_hybrid import compute_trajectory_hybrid
 from metrics.metrics_trajectory import *
 from data_driven.models.hybrid_model import HybridDriftModule
 
-
-list_test_files = '../data/NOAA/nextpoint_ds/contexts/pt32d50/list_test_files.pkl'
-config_path = '../configs/configs_NOAA/test'
-'''checkpoint_path = '../checkpoints/NOAA/newloss/lightning_logs/version_16/checkpoints/epoch=123-step=210180.ckpt'  #'../checkpoints/NOAA/lightning_logs/version_25/checkpoints/epoch=146-step=245931.ckpt'
-config_data_driven = 'configs_data_driven/NOAA/config_NOAA.yml'''
-checkpoint_path = '../checkpoints/NOAA/newloss/lightning_logs/version_23/checkpoints/epoch=135-step=195976.ckpt'
-config_data_driven = 'configs_data_driven/NOAA/config_NOAA_trajectory.yml'
-test_csv = '../data/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_test_ok.csv'
-
+list_test_files = '/data/manon/MasterThesis/NOAA/testing_files_1000.pkl'
+config_path = '/data/manon/MasterThesis/configs_NOAA/test'
+checkpoint_path = '~/checkpoints/MasterThesis/tuning/lightning_logs/version_28/checkpoints/epoch=14-step=22905.ckpt'
+config_data_driven = './configs/config_training.yml'
+test_csv = '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_test_ok.csv'
 
 def bootstrap(x,alpha=0.05):
     '''This function returns the 1-alpha% Confidence interval of the mean of x 
@@ -64,7 +60,7 @@ def compute_nextpos_and_scores_hybrid(row, model):
     with open(context_path, 'rb') as f:
         context = np.load(f)
     context = torch.from_numpy(context.astype(np.float32)).cuda()
-    context = context[0:-2,:,:]
+    #context = context[0:-2,:,:]
 
     pos_pred = model(xphys,context)
 
@@ -101,8 +97,11 @@ if __name__ == "__main__":
     with open(config_data_driven, 'r') as f:
         config_dd = yaml.safe_load(f)
 
-    with open(list_test_files, 'rb') as f:
-        list_names = pickle.load(f)
+    ''' with open(list_test_files, 'rb') as f:
+        list_names = pickle.load(f)'''
+
+    list_names = os.listdir(config_path)
+    list_names = list_names[:10]
 
     results_list_3h = []
     results_list_6h = []

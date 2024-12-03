@@ -49,6 +49,12 @@ class Hybrid_Model(nn.Module):
     def forward(self, xphys, context):
         #xphys = self.physical_model(init_position.detach(), init_time.detach(), dict_path).detach().to(self.device)
         xNN_part = self.data_driven_model(context)
+        if torch.isnan(context).any():
+            print('Nan in context')
+        if torch.isnan(xNN_part).any():
+            print('Nan in xNN_part')
+        if torch.isnan(xphys).any():
+            print('Nan in xphys')
         #xphys = torch.squeeze(xphys)
         x = torch.cat((xphys,xNN_part), dim=-1)
         xNN = self.final_part(x)
@@ -71,10 +77,10 @@ class HybridDriftModule(pl.LightningModule):
 
         #xpred = self.model(init_position, init_time, context, dict_path)
         xpred = self.model(xphys,context)
-        #loss = haversine_loss(xpred, final_position)
+        loss = haversine_loss(xpred, final_position)
         #loss = self.loss(xpred,final_position)
         #loss = LDA_loss_step(xpred,final_position,initial_position)
-        loss = haversine_loss_cosine(xpred,final_position,initial_position)
+        #loss = haversine_loss_cosine(xpred,final_position,initial_position)
 
         self.log("train_loss", loss,prog_bar=True,on_epoch=True, on_step=True)
         return loss

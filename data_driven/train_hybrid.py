@@ -11,6 +11,8 @@ import yaml
 
 if __name__ == "__main__": 
 
+    pl.seed_everything(42, workers=True)
+
     parser = ArgumentParser()
     parser.add_argument("--config", type = str)
     args = parser.parse_args()

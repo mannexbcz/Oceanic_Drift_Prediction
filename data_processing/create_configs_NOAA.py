@@ -10,17 +10,17 @@ import pickle
 import requests
 import cdsapi
 
-PATH_CONFIGS = '../configs/configs_NOAA'
-PATH_CONFIGS_TRAIN = '../configs/configs_NOAA/train'
-PATH_CONFIGS_TEST = '../configs/configs_NOAA/test'
-PATH_CONFIGS_VAL = '../configs/configs_NOAA/val'
-LIST_TRAIN = '../data/NOAA/training_files_1000.pkl'
-LIST_TEST = '../data/NOAA/testing_files_1000.pkl'
-LIST_VAL = '../data/NOAA/validation_files_1000.pkl'
-PATH_TRAJ = '../data/NOAA/trajectories'
-SAVE_PATH_WATER = '../data/HYCOM/NOAA'
-SAVE_PATH_WIND = '../data/ERA5_Wind/NOAA_Wind'
-SAVE_PATH_WAVES = '../data/ERA5_Wind/NOAA_Waves'
+PATH_CONFIGS = '/data/manon/MasterThesis/configs_NOAA'
+PATH_CONFIGS_TRAIN = '/data/manon/MasterThesis/configs_NOAA/train'
+PATH_CONFIGS_TEST = '/data/manon/MasterThesis/configs_NOAA/test'
+PATH_CONFIGS_VAL = '/data/manon/MasterThesis/configs_NOAA/val'
+LIST_TRAIN = '/data/manon/MasterThesis/NOAA/training_files_1000.pkl'
+LIST_TEST = '/data/manon/MasterThesis/NOAA/testing_files_1000.pkl'
+LIST_VAL = '/data/manon/MasterThesis/NOAA/validation_files_1000.pkl'
+PATH_TRAJ = '/data/manon/MasterThesis/NOAA/trajectories'
+SAVE_PATH_WATER = '/data/manon/MasterThesis/HYCOM'
+SAVE_PATH_WIND = '/data/manon/MasterThesis/ERA5_Wind'
+SAVE_PATH_WAVES = '/data/manon/MasterThesis/ERA5_Waves'
 
 def get_days(start, end):
     span = end - start
@@ -42,9 +42,8 @@ def create_all_configs(list_to_config, path_configs = PATH_CONFIGS):
         data_name = data_file
         config_name = path_configs + '/config_' + data_name[:-4]+'.yml'
         if os.path.exists(config_name):
-            print('Data already downloaded')
             continue
-
+        
         # 1st step: read trace
         data_file = os.path.join(PATH_TRAJ, data_file)
         lon, lat, time_drift = get_true_drift_positions(data_file, NOAA=True)
@@ -133,8 +132,11 @@ def create_all_configs(list_to_config, path_configs = PATH_CONFIGS):
         c.retrieve(
             'reanalysis-era5-single-levels',
             {
-                'product_type': 'reanalysis',
-                'format': 'netcdf',
+                'area': [
+                    lat_max, lon_min, lat_min,lon_max
+                ],
+                'product_type': ['reanalysis'],
+                'data_format': 'netcdf',
                 'variable': [
                     '10m_u_component_of_wind', '10m_v_component_of_wind',
                 ],
@@ -150,13 +152,13 @@ def create_all_configs(list_to_config, path_configs = PATH_CONFIGS):
                     '21:00', '22:00', '23:00',
                 ],
                 'day': days,
+                'month': months,
                 'area': [
                     lat_max, lon_min, lat_min,lon_max
-                ],
-                'month': months,
+                ]
             },
             path_wind)
-        
+    
         ################################## WAVE DATA (ERA5) ###########################################################
 
         #print('Downloading Waves data...')
@@ -166,8 +168,11 @@ def create_all_configs(list_to_config, path_configs = PATH_CONFIGS):
         c.retrieve(
             'reanalysis-era5-single-levels',
             {
+                'area': [
+                    lat_max, lon_min, lat_min,lon_max
+                ],
                 'product_type': 'reanalysis',
-                'format': 'netcdf',
+                'data_format': 'netcdf',
                 'variable': [
                     'u_component_stokes_drift', 'v_component_stokes_drift',
                 ],
@@ -183,16 +188,13 @@ def create_all_configs(list_to_config, path_configs = PATH_CONFIGS):
                     '21:00', '22:00', '23:00',
                 ],
                 'day': days,
-                'area': [
-                    lat_max, lon_min, lat_min,lon_max
-                ],
                 'month': months,
             },
             path_waves)
         
         ################################# BATHYMETRY #############################################################
 
-        if (((lat_max >= 0 and lat_max <= 90) and (lat_min >= 0 and lat_min <= 90)) and ((lon_max >= -180 and lon_max <= -60) and (lon_min >= -180 and lon_min <= -60))):
+        '''if (((lat_max >= 0 and lat_max <= 90) and (lat_min >= 0 and lat_min <= 90)) and ((lon_max >= -180 and lon_max <= -60) and (lon_min >= -180 and lon_min <= -60))):
             path_bathy = '../data/GEBCO_Bathymetry/gebco_2023_n90.0_s0.0_w-180.0_e-60.0.nc'
 
         elif (((lat_max >= 0 and lat_max <= 90) and (lat_min >= 0 and lat_min <= 90)) and ((lon_max >= -60 and lon_max <= 60) and (lon_min >= -60 and lon_min <= 60))):
@@ -208,19 +210,19 @@ def create_all_configs(list_to_config, path_configs = PATH_CONFIGS):
             path_bathy = '../data/GEBCO_Bathymetry/gebco_2023_n0.0_s-90.0_w-60.0_e60.0.nc'
 
         elif (((lat_max >= -90 and lat_max <= 0) and (lat_min >= -90 and lat_min <= 0)) and ((lon_max >= 60 and lon_max <= 180) and (lon_min >= 60 and lon_min <= 180))):
-            path_bathy = '../data/GEBCO_Bathymetry/gebco_2023_n0.0_s-90.0_w60.0_e180.0.nc'
+            path_bathy = '../data/GEBCO_Bathymetry/gebco_2023_n0.0_s-90.0_w60.0_e180.0.nc' '''
 
         ################################## CONFIG ################################################################
 
         dic = {'PATH_DRIFT': data_file, 
-               'PATH_WIND': path_wind,
-               'PATH_WATER' : path_water,
-               'PATH_WAVES': path_waves,
-               'PATH_BATHY': path_bathy,
-               'min_lon': lon_min,
-               'max_lon': lon_max,
-               'min_lat': lat_min,
-               'max_lat': lat_max}
+            'PATH_WIND': path_wind,
+            'PATH_WATER' : path_water,
+            'PATH_WAVES': path_waves,
+            #'PATH_BATHY': path_bathy,
+            'min_lon': lon_min,
+            'max_lon': lon_max,
+            'min_lat': lat_min,
+            'max_lat': lat_max}
         
         #print('     Saving config file...')
 

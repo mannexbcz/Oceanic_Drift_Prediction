@@ -4,7 +4,7 @@ import torch
 from utils.RK4 import RK4_step
 from utils.param_alpha import general_alpha
 from models.physical_model import get_physical_model
-from data_processing.context import get_context
+from data_processing.context import get_context_wo_check
 from utils.read_data import get_initial_position, get_two_initial_positions
 from data_driven.models.hybrid_model import HybridDriftModule, Hybrid_Model
 from data_driven.models.trajectory_model import TrajectoryModule
@@ -20,8 +20,8 @@ def compute_position_hybrid(pos_1, time1, pretrained_model, config):
     pos_1 = pos_1.squeeze()
     xphys = physical_model(pos_1,time1,config).to('cuda')
 
-    context = get_context(config['PATH_WATER'],config['PATH_WIND'],config['PATH_WAVES'], config['PATH_BATHY'],pos_1[0].item(),pos_1[1].item(),time1,config['d_context'], config['npoints'])
-    context= context[:-2,:,:]
+    context = get_context_wo_check(config['PATH_WATER'],config['PATH_WIND'],config['PATH_WAVES'],pos_1[0].item(),pos_1[1].item(),time1,config['d_context'], config['npoints'])
+    #context= context[:-2,:,:]
     context = torch.from_numpy(context.astype(np.float32)).to('cuda')
 
     xphys = torch.unsqueeze(xphys,0)
@@ -73,8 +73,8 @@ def compute_position_hybrid_w_history(pos_0, pos_1, time1, prev_context, pretrai
     pos_1 = pos_1.squeeze()
     xphys = physical_model(pos_1,time1,config).to('cuda')
 
-    context = get_context(config['PATH_WATER'],config['PATH_WIND'],config['PATH_WAVES'], config['PATH_BATHY'],pos_1[0].item(),pos_1[1].item(),time1,config['d_context'], config['npoints'])
-    context= context[:-2,:,:]
+    context = get_context_wo_check(config['PATH_WATER'],config['PATH_WIND'],config['PATH_WAVES'],pos_1[0].item(),pos_1[1].item(),time1,config['d_context'], config['npoints'])
+    #context= context[:-2,:,:]
     context = torch.from_numpy(context.astype(np.float32)).to('cuda')
 
     final_context = torch.cat((context, prev_context), 0)
@@ -103,8 +103,8 @@ def compute_trajectory_hybrid_w_history(config,nhours, NOAA=False):
     latitudes[1] = pos[0].item()
     longitudes[1] = pos[1].item()
 
-    prevcontext = get_context(config['PATH_WATER'],config['PATH_WIND'],config['PATH_WAVES'], config['PATH_BATHY'],prevpos[0].item(),prevpos[1].item(),time-1,config['d_context'], config['npoints'])
-    prevcontext= prevcontext[:-2,:,:]
+    prevcontext = get_context_wo_check(config['PATH_WATER'],config['PATH_WIND'],config['PATH_WAVES'], prevpos[0].item(),prevpos[1].item(),time-1,config['d_context'], config['npoints'])
+    #prevcontext= prevcontext[:-2,:,:]
     prevcontext = torch.from_numpy(prevcontext.astype(np.float32)).to('cuda')
 
     # Model

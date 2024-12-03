@@ -16,11 +16,11 @@ from metrics.metrics_trajectory import *
 from data_driven.models.hybrid_model_w_history import HybridDriftModule_w_History
 
 
-list_test_files = '../data/NOAA/nextpoint_ds/contexts/pt32d50/list_test_files.pkl'
-config_path = '../configs/configs_NOAA/test'
-checkpoint_path = '../checkpoints/NOAA/w_history/lightning_logs/version_2/checkpoints/epoch=168-step=250458.ckpt'  #'../checkpoints/NOAA/lightning_logs/version_25/checkpoints/epoch=146-step=245931.ckpt'
-config_data_driven = 'configs_data_driven/NOAA/config_NOAA.yml'
-test_csv = '../data/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_test_with_previous.csv'
+list_test_files = '/data/manon/MasterThesis/NOAA/testing_files_1000.pkl'
+config_path = '/data/manon/MasterThesis/configs_NOAA/test'
+checkpoint_path = '~/checkpoints/MasterThesis/tuning/lightning_logs/version_28/checkpoints/epoch=14-step=22905.ckpt'
+config_data_driven = './configs/config_training.yml'
+test_csv = '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_test_w_previous.csv'
 
 
 def bootstrap(x,alpha=0.05):
@@ -65,13 +65,13 @@ def compute_nextpos_and_scores_hybrid(row, model):
     with open(context_path, 'rb') as f:
         context = np.load(f)
     context = torch.from_numpy(context.astype(np.float32)).cuda()
-    context = context[0:-2,:,:]
+    #context = context[0:-2,:,:]
 
     prev_context_path = row['PREVIOUS_PATH_CONTEXT']
     with open(prev_context_path, 'rb') as f:
         prev_context = np.load(f)
     prev_context = torch.from_numpy(prev_context.astype(np.float32)).cuda()
-    prev_context = prev_context[0:-2,:,:]
+    #prev_context = prev_context[0:-2,:,:]
 
     final_context = torch.cat((context, prev_context), 0)
 

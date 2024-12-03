@@ -1,6 +1,7 @@
 from utils.read_data import water_interpolated, wind_interpolated, wave_interpolated, bathymetry_interpolated
 from utils.convert_lats import new_latitude, new_longitude
 import numpy as np
+from utils.point_in_domain import check_point_boundaries
 
 def get_water_context(path_water, lat_init, lon_init, time_init, d = 1, npoints = 32):
 
@@ -108,15 +109,31 @@ def get_bathymetry_context(path_baythy, lat_init, lon_init, time_init, d = 1, np
     return context_bathymetry, context_coasts
 
 
-def get_context(path_water, path_wind, path_waves, path_bathy, init_lat, init_lon, init_time, d_context=1, npoints=32):
+def get_context(path_water, path_wind, path_waves, init_lat, init_lon, init_time, config, d_context=1, npoints=32):
+
+    init_lat, init_lon = check_point_boundaries(init_lat, init_lon, config['min_lat'].detach().cpu().numpy(), config['max_lat'].detach().cpu().numpy(), config['min_lon'].detach().cpu().numpy(), config['max_lon'].detach().cpu().numpy(),d_context+10)
 
     context_water_u, context_water_v = get_water_context(path_water, init_lat, init_lon, init_time, d = d_context, npoints = npoints)
     context_wind_u, context_wind_v = get_wind_context(path_wind, init_lat, init_lon, init_time, d = d_context, npoints = npoints)
     context_waves_u, context_waves_v = get_waves_context(path_waves, init_lat, init_lon, init_time, d = d_context, npoints = npoints)
-    context_bathymetry, context_coasts = get_bathymetry_context(path_bathy, init_lat, init_lon, init_time, d = d_context, npoints = npoints)
-    # merge contextes
-    #print('Merging context')
-    context = np.stack((context_water_u,context_water_v,context_wind_u,context_wind_v,context_waves_u,context_waves_v, context_bathymetry, context_coasts))
-    assert np.shape(context) == (8,npoints,npoints), f"Wrong shape for the context: {np.shape(context)}"
+    #context_bathymetry, context_coasts = get_bathymetry_context(path_bathy, init_lat, init_lon, init_time, d = d_context, npoints = npoints)
+
+    context = np.stack((context_water_u,context_water_v,context_wind_u,context_wind_v,context_waves_u,context_waves_v))
+    assert np.shape(context) == (6,npoints,npoints), f"Wrong shape for the context: {np.shape(context)}"
+
+    return context
+
+
+def get_context_wo_check(path_water, path_wind, path_waves, init_lat, init_lon, init_time, d_context=1, npoints=32):
+
+    #init_lat, init_lon = check_point_boundaries(init_lat, init_lon, config['min_lat'].detach().cpu().numpy(), config['max_lat'].detach().cpu().numpy(), config['min_lon'].detach().cpu().numpy(), config['max_lon'].detach().cpu().numpy(),d_context+10)
+
+    context_water_u, context_water_v = get_water_context(path_water, init_lat, init_lon, init_time, d = d_context, npoints = npoints)
+    context_wind_u, context_wind_v = get_wind_context(path_wind, init_lat, init_lon, init_time, d = d_context, npoints = npoints)
+    context_waves_u, context_waves_v = get_waves_context(path_waves, init_lat, init_lon, init_time, d = d_context, npoints = npoints)
+    #context_bathymetry, context_coasts = get_bathymetry_context(path_bathy, init_lat, init_lon, init_time, d = d_context, npoints = npoints)
+
+    context = np.stack((context_water_u,context_water_v,context_wind_u,context_wind_v,context_waves_u,context_waves_v))
+    assert np.shape(context) == (6,npoints,npoints), f"Wrong shape for the context: {np.shape(context)}"
 
     return context

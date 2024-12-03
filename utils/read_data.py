@@ -18,6 +18,15 @@ def convert_date(strdate):
     hours = duration.total_seconds()/3600
     return hours
 
+
+def convert_date_NOAA(secsince1970):
+    date1970 = datetime(1970,1,1,0,0,0)
+    reference = datetime(2000,1,1,0,0,0)
+    delta200_1970 = (date1970-reference).total_seconds()
+    nsecdepuis2000 = secsince1970 - delta200_1970
+    hours = nsecdepuis2000/3600
+    return hours
+
 def convert_date_back(nhours):
     # returns day but not hour
     reference = datetime(2000,1,1,0,0,0)
@@ -110,27 +119,31 @@ def get_wind_data(path_wind):
 def wind_interpolated(path_wind):
     ds = nc.Dataset(path_wind)
 
+    print('Reading dataset ok')
     lon = ds.variables['longitude']
     lon = lon[:].data
-
+    print('Reading lon ok')
     lat = ds.variables['latitude']
     lat = lat[:].data
-
-    time = ds.variables['time']
+    print('Reading lat ok')
+    time = ds.variables['valid_time']
     time = time[:].data
-    vfunc = np.vectorize(convert_hours_1900_2000) # convert time to fit the rest of the data
+    vfunc = np.vectorize(convert_date_NOAA) # convert time to fit the rest of the data
     time = vfunc(time)
+
+    print('Reading time ok')
 
     # Wind data
     u10 = ds.variables['u10']
     u10 = u10[:].data
     v10 = ds.variables['v10']
     v10 = v10[:].data
+    print('Reading wind ok')
 
     # Interpolating functions for u10 and v10
     u10_interpolation = RegularGridInterpolator((time, lat, lon), u10, bounds_error=False)
     v10_interpolation = RegularGridInterpolator((time, lat, lon), v10, bounds_error=False)
-
+    print('Interpolation ok')
     return u10_interpolation, v10_interpolation
 
 ############# Wave Data ########################################################
@@ -148,18 +161,21 @@ def wave_interpolated(path_wave):
     lat = ds.variables['latitude']
     lat = lat[:].data
 
-    time = ds.variables['time']
+    time = ds.variables['valid_time']
     time = time[:].data
-    vfunc = np.vectorize(convert_hours_1900_2000) # convert time to fit the rest of the data
+    vfunc = np.vectorize(convert_date_NOAA) # convert time to fit the rest of the data
     time = vfunc(time)
 
     # Wind data
     ust = ds.variables['ust']
     ust = ust[:].data
-    ust = np.where(ust == -32767, 0, ust)
+    ust = np.where(ust == np.nan, 0, ust)
     vst = ds.variables['vst']
     vst = vst[:].data
-    vst = np.where(vst == -32767, 0, vst)
+    vst = np.where(vst == np.nan, 0, vst)
+
+    ust = np.where(ust > 1e10, 0, ust)
+    vst = np.where(vst > 1e10, 0, vst)
 
     # Interpolating functions for ust and vst
     ust_interpolation = RegularGridInterpolator((time, lat, lon), ust, bounds_error=False)

@@ -87,7 +87,7 @@ class DriftPairDataset_Wo_Computation(Dataset):
         context = torch.from_numpy(context.astype(np.float32))
         #context.requires_grad=True
         
-        return initial_position, xphys, final_position, context[0:-2,:,:]
+        return initial_position, xphys, final_position, context #[0:-2,:,:]
 
 
 class DriftPairDataset_W_Previous(Dataset):
@@ -113,13 +113,13 @@ class DriftPairDataset_W_Previous(Dataset):
         with open(context_path, 'rb') as f:
             context = np.load(f)
         context = torch.from_numpy(context.astype(np.float32))
-        context = context[0:-2,:,:]
+        #context = context[0:-2,:,:]
 
         prev_context_path = self.tab['PREVIOUS_PATH_CONTEXT'].iloc[idx]
         with open(prev_context_path, 'rb') as f:
             prev_context = np.load(f)
         prev_context = torch.from_numpy(prev_context.astype(np.float32))
-        prev_context = prev_context[0:-2,:,:]
+        #prev_context = prev_context[0:-2,:,:]
 
         final_context = torch.cat((context, prev_context), 0)
 
@@ -160,3 +160,38 @@ class TrajectoryDataset(Dataset):
             config = yaml.safe_load(f)
 
         return pos0, pos1, pos2, pos3, time0, config, context
+
+
+class TrajectoryDataset_Dynamic(Dataset):
+    def __init__(self, csvfile):
+        self.tab = pd.read_csv(csvfile)
+        
+    def __len__(self):
+        return len(self.tab)
+
+    def __getitem__(self, idx):
+
+        ['', 'PATH_WATER', 'PATH_WAVES']
+
+        lat0, lon0 = self.tab['lat0'].iloc[idx], self.tab['lon0'].iloc[idx]
+        pos0 = torch.tensor([lat0, lon0], dtype = torch.float)
+
+        lat1, lon1 = self.tab['lat1'].iloc[idx], self.tab['lon1'].iloc[idx]
+        pos1 = torch.tensor([lat1, lon1], dtype = torch.float)
+
+        lat2, lon2 = self.tab['lat2'].iloc[idx], self.tab['lon2'].iloc[idx]
+        pos2 = torch.tensor([lat2, lon2], dtype = torch.float)
+
+        lat3, lon3 = self.tab['lat3'].iloc[idx], self.tab['lon3'].iloc[idx]
+        pos3 = torch.tensor([lat3, lon3], dtype = torch.float)
+
+        time0 = self.tab['time_init'].iloc[idx]
+
+        with open(self.tab['CONFIG_PATH'].iloc[idx], 'r') as f:
+            config = yaml.safe_load(f)
+
+        '''PATH_WIND = self.tab['PATH_WIND'].iloc[idx]
+        PATH_WATER = self.tab['PATH_WATER'].iloc[idx]
+        PATH_WAVES = self.tab['PATH_WAVES'].iloc[idx]'''
+
+        return pos0, pos1, pos2, pos3, time0, config #, PATH_WATER, PATH_WIND, PATH_WAVES
