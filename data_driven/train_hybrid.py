@@ -42,7 +42,8 @@ if __name__ == "__main__":
     # Trainer
     lr_monitor = LearningRateMonitor(logging_interval='step')
     checkpoint_callback = ModelCheckpoint(monitor='val_loss')
-    trainer = pl.Trainer(default_root_dir=chkpt_folder,min_epochs=config['min_epochs'], max_epochs=config['max_epochs'],check_val_every_n_epoch=config['check_val_every_n_epochs'], callbacks=[EarlyStopping(monitor="val_loss", patience = config['patience'], mode="min"), lr_monitor, checkpoint_callback],accelerator="gpu", devices=1) #profiler="simple",
+    checkpoint_callback2 = ModelCheckpoint()
+    trainer = pl.Trainer(default_root_dir=chkpt_folder,min_epochs=config['min_epochs'], max_epochs=config['max_epochs'],check_val_every_n_epoch=config['check_val_every_n_epochs'], callbacks=[EarlyStopping(monitor="val_loss", patience = config['patience'], mode="min"), lr_monitor, checkpoint_callback,checkpoint_callback2],accelerator="gpu", devices=1) #profiler="simple",
 
     # Train model
     trainer.fit(model, train_loader, val_loader)

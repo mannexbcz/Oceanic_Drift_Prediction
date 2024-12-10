@@ -15,9 +15,9 @@ from data_driven.compute_trajectory_hybrid import compute_trajectory_hybrid
 from metrics.metrics_trajectory import *
 from data_driven.models.hybrid_model import HybridDriftModule
 
-list_test_files = '/data/manon/MasterThesis/NOAA/testing_files_1000.pkl'
-config_path = '/data/manon/MasterThesis/configs_NOAA/test'
-checkpoint_path = '~/checkpoints/MasterThesis/tuning/lightning_logs/version_28/checkpoints/epoch=14-step=22905.ckpt'
+list_test_files = '/data/manon/MasterThesis/NOAA/testing_files_1000_new.pkl'
+config_path = '/data/manon/MasterThesis/configs_NOAA/all_configs'
+checkpoint_path = '~/checkpoints/MasterThesis/lightning_logs/version_2/checkpoints/epoch=6-step=8246.ckpt'
 config_data_driven = './configs/config_training.yml'
 test_csv = '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_test_ok.csv'
 
@@ -28,6 +28,10 @@ def bootstrap(x,alpha=0.05):
     mean_vals = [np.random.choice(x,len(x)).mean() for _ in range(10000)]
     
     return np.quantile(mean_vals, alpha/2), np.quantile(mean_vals, 1-alpha/2)
+
+def convert_name_to_config(name):
+    config_name = 'config_' + name[:-4] + '.yml'
+    return config_name
 
 def print_results(res):
     for colname in ['ssc','dsi','tad','ssc_dd','dsi_dd','tad_dd']:
@@ -97,11 +101,13 @@ if __name__ == "__main__":
     with open(config_data_driven, 'r') as f:
         config_dd = yaml.safe_load(f)
 
-    ''' with open(list_test_files, 'rb') as f:
-        list_names = pickle.load(f)'''
+    with open(list_test_files, 'rb') as f:
+        list_names = pickle.load(f)
+    
+    list_names = [convert_name_to_config(name) for name in list_names]
 
-    list_names = os.listdir(config_path)
-    list_names = list_names[:10]
+    #list_names = os.listdir(config_path)
+    #list_names = list_names[:10]
 
     results_list_3h = []
     results_list_6h = []
@@ -111,10 +117,13 @@ if __name__ == "__main__":
     results_list_72h = []
 
     for data_file in tqdm(list_names):
-
-        #print('Processing file', data_file)
-        with open(os.path.join(config_path,data_file), 'r') as f:
-            config = yaml.safe_load(f)
+        
+        try: 
+            #print('Processing file', data_file)
+            with open(os.path.join(config_path,data_file), 'r') as f:
+                config = yaml.safe_load(f)
+        except:
+            continue
 
         config = {**config, **config_dd}
         config['checkpoint_test'] = checkpoint_path

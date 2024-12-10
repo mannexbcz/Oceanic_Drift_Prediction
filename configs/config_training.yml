@@ -1,20 +1,20 @@
 bs: 32 #32
-ch1: 33 #32
-ch2: 52 #19 #64
+ch1: 32 #32
+ch2: 19 #19 #64
 check_val_every_n_epochs: 1
 chkpt_folder: ~/checkpoints/MasterThesis
 csvfile_test: 
-csvfile_train: '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_train_ok.csv'
-csvfile_val: /data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_val_ok.csv
+csvfile_train: '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_train_new_w_previous.csv'
+csvfile_val: /data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_val_new_w_previous.csv
 d_context: 50
-hidden1: 115 #225 #128 #256
-hidden2: 100 #73 #128 #64
-hidden3: 236 #188 #256 #128
-hidden4: 120 #66 #32 #64
-lr: 0.002
+hidden1: 225 #225 #128 #256
+hidden2: 73 #73 #128 #64
+hidden3: 188 #188 #256 #128
+hidden4: 66 #66 #32 #64
+lr: 0.0001 #0.002
 min_epochs : 150 #150
-max_epochs: 1000
+max_epochs: 150
 npoints: 32
 num_workers: 32
-patience: 20
+patience: 50
 

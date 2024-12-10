@@ -228,7 +228,7 @@ def compute_contexts_Canada():
 
 
 def compute_contexts_from_config_list_NOAA(path_configs, saving_path, saving_folder_context, set='train'):
-    
+    number_errors = 0
     physical_model = get_physical_model()
 
     dataset_train = pd.DataFrame(columns=['Latitude_init','Longitude_init', 'time_init', 'Latitude_final', 'Longitude_final', 'Lat_phys', 'Lon_phys',
@@ -268,6 +268,7 @@ def compute_contexts_from_config_list_NOAA(path_configs, saving_path, saving_fol
             try:
                 context_path = get_context(config['PATH_WATER'], config['PATH_WIND'],config['PATH_WAVES'],lat_init,lon_init,time_init,name_file,saving_folder_context,d_context, npoints)
             except:
+                number_errors += 1
                 print('notworking')
                 continue
 
@@ -281,6 +282,7 @@ def compute_contexts_from_config_list_NOAA(path_configs, saving_path, saving_fol
             dataset_train = pd.concat([new_row,dataset_train.loc[:]]).reset_index(drop=True)
         
     print('Length of train dataset:', len(dataset_train))
+    print('Number of errors: ', number_errors)
     dataset_train.to_csv(saving_path)
 
 
@@ -289,13 +291,13 @@ if __name__ == "__main__":
 
     faulthandler.enable()
     
-    path_configs = '/data/manon/MasterThesis/configs_NOAA/val'
+    '''path_configs = '/data/manon/MasterThesis/configs_NOAA/val'
     saving_path = '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_val.csv'
     saving_folder_context = '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50'
     set = 'val'
 
     print("Computing contexts for validation dataset")
-    compute_contexts_from_config_list_NOAA(path_configs, saving_path, saving_folder_context, set)
+    compute_contexts_from_config_list_NOAA(path_configs, saving_path, saving_folder_context, set)'''
 
     path_configs = '/data/manon/MasterThesis/configs_NOAA/train'
     saving_path = '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_train.csv'

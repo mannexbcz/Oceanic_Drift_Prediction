@@ -27,10 +27,10 @@ if __name__ == "__main__":
 
     # Datasets
     #train_dataset = DriftPairDataset(csvfile,d_context=1,npoints=32)
-    '''train_dataset = TrajectoryDataset(csvfile_train)
-    val_dataset = TrajectoryDataset(csvfile_val)'''
-    train_dataset = TrajectoryDataset_Dynamic(csvfile_train)
-    val_dataset = TrajectoryDataset_Dynamic(csvfile_val)
+    train_dataset = TrajectoryDataset(csvfile_train)
+    val_dataset = TrajectoryDataset(csvfile_val)
+    '''train_dataset = TrajectoryDataset_Dynamic(csvfile_train)
+    val_dataset = TrajectoryDataset_Dynamic(csvfile_val)'''
     
 
     # Dataloaders

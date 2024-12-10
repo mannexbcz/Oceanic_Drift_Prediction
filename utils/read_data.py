@@ -41,6 +41,15 @@ def convert_hours_1900_2000(hours1900):
     century_h = century_diff.total_seconds()/3600
     return hours1900-century_h
 
+def convert_date_NOAA_UNIX(secsince1900):
+    date_object = datetime.fromtimestamp(secsince1900)
+    #date1970 = datetime(1970,1,1,0,0,0)
+    reference = datetime(2000,1,1,0,0,0)
+    nsecdepuis2000 = (date_object-reference).total_seconds()
+    #nsecdepuis2000 = (secsince1900/1000) - delta200_1970
+    hours = nsecdepuis2000/3600
+    return hours
+
 ############# Drift position from Canada Data ##################################
 
 def read_drift_positions(path_drift, NOAA = False):
@@ -117,33 +126,29 @@ def get_wind_data(path_wind):
     return ds
 
 def wind_interpolated(path_wind):
-    ds = nc.Dataset(path_wind)
 
-    print('Reading dataset ok')
-    lon = ds.variables['longitude']
-    lon = lon[:].data
-    print('Reading lon ok')
-    lat = ds.variables['latitude']
-    lat = lat[:].data
-    print('Reading lat ok')
-    time = ds.variables['valid_time']
-    time = time[:].data
-    vfunc = np.vectorize(convert_date_NOAA) # convert time to fit the rest of the data
-    time = vfunc(time)
+    with nc.Dataset(path_wind) as ds:
+    #ds = nc.Dataset(path_wind)
 
-    print('Reading time ok')
+        lon = ds.variables['longitude']
+        lon = lon[:].data
+        lat = ds.variables['latitude']
+        lat = lat[:].data
+        time = ds.variables['valid_time']
+        time = time[:].data
+        vfunc = np.vectorize(convert_date_NOAA_UNIX) # convert time to fit the rest of the data
+        time = vfunc(time)
 
-    # Wind data
-    u10 = ds.variables['u10']
-    u10 = u10[:].data
-    v10 = ds.variables['v10']
-    v10 = v10[:].data
-    print('Reading wind ok')
+        # Wind data
+        u10 = ds.variables['u10']
+        u10 = u10[:].data
+        v10 = ds.variables['v10']
+        v10 = v10[:].data        
 
     # Interpolating functions for u10 and v10
     u10_interpolation = RegularGridInterpolator((time, lat, lon), u10, bounds_error=False)
     v10_interpolation = RegularGridInterpolator((time, lat, lon), v10, bounds_error=False)
-    print('Interpolation ok')
+
     return u10_interpolation, v10_interpolation
 
 ############# Wave Data ########################################################
@@ -153,29 +158,31 @@ def get_wave_data(path_wave):
     return ds
 
 def wave_interpolated(path_wave):
-    ds = nc.Dataset(path_wave)
+    
+    with nc.Dataset(path_wave) as ds:
+    #ds = nc.Dataset(path_wave)
 
-    lon = ds.variables['longitude']
-    lon = lon[:].data
+        lon = ds.variables['longitude']
+        lon = lon[:].data
 
-    lat = ds.variables['latitude']
-    lat = lat[:].data
+        lat = ds.variables['latitude']
+        lat = lat[:].data
 
-    time = ds.variables['valid_time']
-    time = time[:].data
-    vfunc = np.vectorize(convert_date_NOAA) # convert time to fit the rest of the data
-    time = vfunc(time)
+        time = ds.variables['valid_time']
+        time = time[:].data
+        vfunc = np.vectorize(convert_date_NOAA_UNIX) # convert time to fit the rest of the data
+        time = vfunc(time)
 
-    # Wind data
-    ust = ds.variables['ust']
-    ust = ust[:].data
-    ust = np.where(ust == np.nan, 0, ust)
-    vst = ds.variables['vst']
-    vst = vst[:].data
-    vst = np.where(vst == np.nan, 0, vst)
+        # Wind data
+        ust = ds.variables['ust']
+        ust = ust[:].data
+        ust = np.where(ust == np.nan, 0, ust)
+        vst = ds.variables['vst']
+        vst = vst[:].data
+        vst = np.where(vst == np.nan, 0, vst)
 
-    ust = np.where(ust > 1e10, 0, ust)
-    vst = np.where(vst > 1e10, 0, vst)
+        ust = np.where(ust > 1e10, 0, ust)
+        vst = np.where(vst > 1e10, 0, vst)
 
     # Interpolating functions for ust and vst
     ust_interpolation = RegularGridInterpolator((time, lat, lon), ust, bounds_error=False)
@@ -213,7 +220,6 @@ def water_interpolated(path_water):
 
     water_u = np.where(water_u < -10000, 0, water_u)
     water_v = np.where(water_v < -10000, 0, water_v)
-
 
     # Interpolating functions for u10 and v10
     water_u_interpolation = RegularGridInterpolator((time, depth, lat, lon), water_u, bounds_error=False)
