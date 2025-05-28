@@ -17,9 +17,9 @@ from data_driven.models.hybrid_model import HybridDriftModule
 
 list_test_files = '/data/manon/MasterThesis/NOAA/testing_files_1000_new.pkl'
 config_path = '/data/manon/MasterThesis/configs_NOAA/all_configs'
-checkpoint_path = '~/checkpoints/MasterThesis/lightning_logs/version_2/checkpoints/epoch=6-step=8246.ckpt'
+checkpoint_path = '~/checkpoints/MasterThesis/lightning_logs/version_8/checkpoints/epoch=149-step=161850.ckpt'
 config_data_driven = './configs/config_training.yml'
-test_csv = '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_test_ok.csv'
+test_csv = '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_test_all_models.csv'
 
 def bootstrap(x,alpha=0.05):
     '''This function returns the 1-alpha% Confidence interval of the mean of x 
@@ -116,6 +116,8 @@ if __name__ == "__main__":
     results_list_48h = []
     results_list_72h = []
 
+    nerreurs = 0
+
     for data_file in tqdm(list_names):
         
         try: 
@@ -145,6 +147,7 @@ if __name__ == "__main__":
             u10_interpolation, v10_interpolation = wind_interpolated(config['PATH_WIND'])
             water_u_interpolation, water_v_interpolation = water_interpolated(config['PATH_WATER'])
         except:
+            nerreurs +=1
             continue
 
         alpha = update_alpha_GD(config['PATH_DRIFT'], water_u_interpolation, water_v_interpolation, u10_interpolation, v10_interpolation,alpha = 0.02, theta = 0.349066,  step=0.1, npoints=3,NOAA=True)
@@ -153,8 +156,10 @@ if __name__ == "__main__":
         longitudes, latitudes, time_final = compute_position(u_drift, pos_1, time1,1,nhours)
 
         # data driven (hybrid) model
+
         longitudes_dd, latitudes_dd = compute_trajectory_hybrid(config,nhours,NOAA=True)
 
+        
         for i in [3,6,12,24,48,72]: 
             if nhours >= i:
                 ssc = skill_score(true_lon_extrapolated[:i+1], true_lat_extrapolated[:i+1], longitudes[:i+1], latitudes[:i+1])
@@ -200,6 +205,9 @@ if __name__ == "__main__":
     print_results(results_list_48h)
     print('-------------72h--------------')
     print_results(results_list_72h)
+    print('------------------------------')
+    print('Total number of errors:', nerreurs)
+    print('Number of trajectories:', len(list_names))
 
 
 

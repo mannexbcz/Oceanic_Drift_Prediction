@@ -14,13 +14,14 @@ from utils.RK4 import RK4_step, compute_position
 from data_driven.compute_trajectory_hybrid import compute_trajectory_hybrid
 from metrics.metrics_trajectory import *
 from data_driven.models.trajectory_model import TrajectoryModule
+from data_processing.context import extract_context_from_bigcontext, extract_context_from_bigcontext_torch_no_batch
 
 
-list_test_files = '../data/NOAA/nextpoint_ds/contexts/pt32d50/list_test_files.pkl'
-config_path = '../configs/configs_NOAA/test'
-checkpoint_path = '../checkpoints/NOAA/newloss/lightning_logs/version_23/checkpoints/epoch=135-step=195976.ckpt'
-config_data_driven = 'configs_data_driven/NOAA/config_NOAA_trajectory.yml'
-test_csv = '../data/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_test_trajectory.csv'
+list_test_files = '/data/manon/MasterThesis/NOAA/testing_files_1000_new.pkl'
+config_path = '/data/manon/MasterThesis/configs_NOAA/all_configs'
+checkpoint_path = '~/checkpoints/MasterThesis/lightning_logs/version_13/checkpoints/last.ckpt'
+config_data_driven = './configs/config_training.yml'
+test_csv = '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_test_all_models.csv'
 
 
 def bootstrap(x,alpha=0.05):
@@ -30,6 +31,10 @@ def bootstrap(x,alpha=0.05):
     mean_vals = [np.random.choice(x,len(x)).mean() for _ in range(10000)]
     
     return np.quantile(mean_vals, alpha/2), np.quantile(mean_vals, 1-alpha/2)
+
+def convert_name_to_config(name):
+    config_name = 'config_' + name[:-4] + '.yml'
+    return config_name
 
 def print_results(res):
     for colname in ['ssc','dsi','tad','ssc_dd','dsi_dd','tad_dd']:
@@ -52,7 +57,7 @@ def print_results_nextpoint(res):
 
 def compute_nextpos_and_scores_hybrid(row, model):
     
-    final_lat, final_lon = row['Latitude_final'], row['Longitude_final']
+    final_lat, final_lon = row['lat1'], row['lon1']
     final_position = torch.tensor([final_lat, final_lon], dtype = torch.float)
 
     lat0, lon0 = row['Latitude_init'], row['Longitude_init']
@@ -64,13 +69,21 @@ def compute_nextpos_and_scores_hybrid(row, model):
         config = yaml.safe_load(f)
 
     # get context
-    context_path = row['PATH_CONTEXT']
-    with open(context_path, 'rb') as f:
-        context = np.load(f)
-    context = torch.from_numpy(context.astype(np.float32)).cuda()
-    context = context[0:-2,:,:]
+    #context_path = row['PATH_CONTEXT']
+    big_context_path = row['PATH_BIG_CONTEXT']
+    with open(big_context_path, 'rb') as f:
+        big_context = np.load(f)
+    big_context = np.nan_to_num(big_context, nan=0.0)
+    big_context = torch.from_numpy(big_context.astype(np.float32)).to(device='cuda')
 
-    pos_pred = model(pos0,time0,config,context)
+    time_init_bigcontext = row['init_time_bigcontext']
+
+    #print(pos0)
+    context = extract_context_from_bigcontext_torch_no_batch(pos0.squeeze(), torch.Tensor([time0]), big_context,time_init_bigcontext, config, d=50, npoints=32)
+        
+    #context = context[:,:,:]
+
+    pos_pred = model(pos0.unsqueeze(0),[time0],config,context)
 
     lon_pred = pos_pred[0,1].item()
     lat_pred = pos_pred[0,0].item()
@@ -107,6 +120,8 @@ if __name__ == "__main__":
     with open(list_test_files, 'rb') as f:
         list_names = pickle.load(f)
 
+    list_names = [convert_name_to_config(name) for name in list_names]
+
     results_list_3h = []
     results_list_6h = []
     results_list_12h = []
@@ -114,15 +129,14 @@ if __name__ == "__main__":
     results_list_48h = []
     results_list_72h = []
 
-    i =0
     for data_file in tqdm(list_names):
-        i = i+1
-        if i > 1:
-            break
 
-        #print('Processing file', data_file)
-        with open(os.path.join(config_path,data_file), 'r') as f:
-            config = yaml.safe_load(f)
+        try: 
+            #print('Processing file', data_file)
+            with open(os.path.join(config_path,data_file), 'r') as f:
+                config = yaml.safe_load(f)
+        except:
+            continue
 
         config = {**config, **config_dd}
         config['checkpoint_test'] = checkpoint_path

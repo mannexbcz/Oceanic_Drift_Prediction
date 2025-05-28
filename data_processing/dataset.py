@@ -138,28 +138,30 @@ class TrajectoryDataset(Dataset):
         lat0, lon0 = self.tab['Latitude_init'].iloc[idx], self.tab['Longitude_init'].iloc[idx]
         pos0 = torch.tensor([lat0, lon0], dtype = torch.float)
 
-        lat1, lon1 = self.tab['Latitude_1'].iloc[idx], self.tab['Longitude_1'].iloc[idx]
+        lat1, lon1 = self.tab['lat1'].iloc[idx], self.tab['lon1'].iloc[idx]
         pos1 = torch.tensor([lat1, lon1], dtype = torch.float)
 
-        lat2, lon2 = self.tab['Latitude_2'].iloc[idx], self.tab['Longitude_2'].iloc[idx]
+        lat2, lon2 = self.tab['lat2'].iloc[idx], self.tab['lon2'].iloc[idx]
         pos2 = torch.tensor([lat2, lon2], dtype = torch.float)
 
-        lat3, lon3 = self.tab['Latitude_3'].iloc[idx], self.tab['Longitude_3'].iloc[idx]
+        lat3, lon3 = self.tab['lat3'].iloc[idx], self.tab['lon3'].iloc[idx]
         pos3 = torch.tensor([lat3, lon3], dtype = torch.float)
 
         # get context
-        context_path = self.tab['PATH_CONTEXT'].iloc[idx]
-        with open(context_path, 'rb') as f:
-            context = np.load(f)
-        context = torch.from_numpy(context.astype(np.float32))
-        context = context[0:-2,:,:]
+        big_context_path = self.tab['PATH_BIG_CONTEXT'].iloc[idx]
+        '''with open(big_context_path, 'rb') as f:
+            big_context = np.load(f)
+        big_context = np.nan_to_num(big_context, nan=0.0)'''
+        #big_context = torch.from_numpy(big_context.astype(np.float32))
 
         time0 = self.tab['time_init'].iloc[idx]
+        time_init_bigcontext = self.tab['init_time_bigcontext'].iloc[idx]
 
         with open(self.tab['CONFIG_PATH'].iloc[idx], 'r') as f:
             config = yaml.safe_load(f)
 
-        return pos0, pos1, pos2, pos3, time0, config, context
+
+        return pos0, pos1, pos2, pos3, time0, config, big_context_path, time_init_bigcontext
 
 
 class TrajectoryDataset_Dynamic(Dataset):

@@ -10,6 +10,7 @@ from data_driven.losses import haversine_loss, cumulative_lagrangian_loss
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
 from data_processing.context import get_context
+from data_processing.context import extract_context_from_bigcontext, extract_context_from_bigcontext_torch
 
 def extract_nth_point(data_dict, n):
     result_dict = {}
@@ -65,10 +66,11 @@ class Trajectory_Model(nn.Module):
         xphys = torch.zeros_like(pos0)
         for i in range(pos0.size(dim=0)):
             #xphys[i,:] = torch.unsqueeze(self.physical_model(torch.squeeze(pos0[i,:]), time0[i], extract_nth_point(config, i)).detach().to(self.device),dim=0) #(need to do .detach()?)
-            xphys[i,:] = torch.unsqueeze(self.physical_model(torch.squeeze(pos0[i,:]), torch.Tensor([time0]), config).detach().to(self.device),dim=0) #(need to do .detach()?)
+            xphys[i,:] = torch.unsqueeze(self.physical_model(torch.squeeze(pos0[i,:]), torch.Tensor([time0[i]]), config).detach().to(self.device),dim=0) #(need to do .detach()?)
         xphys = xphys.to(self.device)
         xNN_part = self.data_driven_model(context)
-        #xphys = torch.squeeze(xphys)
+        xNN_part = xNN_part.squeeze().unsqueeze(0) # maybe only for testing
+        xphys = xphys.squeeze().unsqueeze(0) # maybe only for testing
         x = torch.cat((xphys,xNN_part), dim=-1)
         xNN = self.final_part(x)
         return xNN+xphys #torch.add(xphys, xNN) 
@@ -141,7 +143,7 @@ class Trajectory_Model_Dyn(nn.Module):
 
 
 class TrajectoryModule(pl.LightningModule):
-    def __init__(self,channels1=32, channels2=16,hidden1=128,hidden2=64,hidden3=128,hidden4=64, lr = 1e-3,bs=32):
+    def __init__(self,channels1=32, channels2=16,hidden1=128,hidden2=64,hidden3=128,hidden4=64, lr = 1e-3,bs=32, d=50,npoints=32):
         super().__init__()
         self.save_hyperparameters()
         self.lr = lr
@@ -149,13 +151,29 @@ class TrajectoryModule(pl.LightningModule):
         #self.loss = nn.MSELoss()
         self.writer = SummaryWriter()
         self.bs = bs
+        self.d = d
+        self.npoints = npoints
 
     def training_step(self, batch, batch_idx):
 
-        pos0, pos1, pos2, pos3, time0, config, context = batch
+        pos0, pos1, pos2, pos3, time0, config, big_context_path, time_init_bigcontext = batch
 
+        batchsize = len(big_context_path)
+        big_contexts = []
+        for i in range(batchsize):
+            with open(big_context_path[i], 'rb') as f:
+                big_context = np.load(f)
+            big_context = np.nan_to_num(big_context, nan=0.0)
+            big_context = torch.from_numpy(big_context.astype(np.float32)).to(device='cuda')
+            big_contexts.append(big_context)   
+
+        context = extract_context_from_bigcontext_torch(pos0, time0, big_contexts,time_init_bigcontext, config, d=self.d, npoints=self.npoints)
         xpred1 = self.model(pos0,time0,config,context)
+
+        context = extract_context_from_bigcontext_torch(xpred1, time0+1, big_contexts,time_init_bigcontext, config, d=self.d, npoints=self.npoints)
         xpred2 = self.model(xpred1,time0+1,config,context)
+
+        context = extract_context_from_bigcontext_torch(xpred2, time0+2, big_contexts,time_init_bigcontext, config, d=self.d, npoints=self.npoints)
         xpred3 = self.model(xpred2,time0+1,config,context)
         
         loss = cumulative_lagrangian_loss(pos0,pos1,pos2,pos3,xpred1,xpred2,xpred3)
@@ -173,15 +191,31 @@ class TrajectoryModule(pl.LightningModule):
         return torch.Tensor([loss])
     
     def validation_step(self, batch, batch_idx):
-        pos0, pos1, pos2, pos3, time0, config, context = batch
 
+        pos0, pos1, pos2, pos3, time0, config, big_context_path, time_init_bigcontext = batch
+
+        batchsize = len(big_context_path)
+        big_contexts = []
+        for i in range(batchsize):
+            with open(big_context_path[i], 'rb') as f:
+                big_context = np.load(f)
+            big_context = np.nan_to_num(big_context, nan=0.0)
+            big_context = torch.from_numpy(big_context.astype(np.float32)).to(device='cuda')
+            big_contexts.append(big_context)
+
+        context = extract_context_from_bigcontext_torch(pos0, time0, big_contexts,time_init_bigcontext, config, d=self.d, npoints=self.npoints)
         xpred1 = self.model(pos0,time0,config,context)
+
+        '''context = extract_context_from_bigcontext_torch(xpred1, time0+1, big_contexts,time_init_bigcontext, config, d=self.d, npoints=self.npoints)
         xpred2 = self.model(xpred1,time0+1,config,context)
+
+        context = extract_context_from_bigcontext_torch(xpred2, time0+2, big_contexts,time_init_bigcontext, config, d=self.d, npoints=self.npoints)
         xpred3 = self.model(xpred2,time0+1,config,context)
+        
+        loss = cumulative_lagrangian_loss(pos0,pos1,pos2,pos3,xpred1,xpred2,xpred3)'''
 
-
-        loss = cumulative_lagrangian_loss(pos0,pos1,pos2,pos3,xpred1,xpred2,xpred3)
-
+        loss = haversine_loss(xpred1, pos1)
+    
         self.log("val_loss", loss,prog_bar=True,on_epoch=True, on_step=True,batch_size = self.bs)
         self.log("hp_metric", loss)
         return 

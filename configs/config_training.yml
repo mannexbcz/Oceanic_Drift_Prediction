@@ -4,8 +4,8 @@ ch2: 19 #19 #64
 check_val_every_n_epochs: 1
 chkpt_folder: ~/checkpoints/MasterThesis
 csvfile_test: 
-csvfile_train: '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_train_new_w_previous.csv'
-csvfile_val: /data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_val_new_w_previous.csv
+csvfile_train: '/data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_train_all_models.csv'
+csvfile_val: /data/manon/MasterThesis/NOAA/nextpoint_ds/contexts/pt32d50/next_point_dataset_val_all_models.csv
 d_context: 50
 hidden1: 225 #225 #128 #256
 hidden2: 73 #73 #128 #64

@@ -13,8 +13,8 @@ def physical_model(init_pos, time_init, dict_path):
     init_pos = np.array([init_lon, init_lat])
 
     # Get interpolated initial data
-    u10_interpolation, v10_interpolation = wind_interpolated(dict_path['PATH_WIND']) #
-    water_u_interpolation, water_v_interpolation = water_interpolated(dict_path['PATH_WATER'])
+    u10_interpolation, v10_interpolation = wind_interpolated(dict_path['PATH_WIND'][0]) #[0] for training with trajectory
+    water_u_interpolation, water_v_interpolation = water_interpolated(dict_path['PATH_WATER'][0]) #idem
 
     # Alpha
     alpha = general_alpha()
